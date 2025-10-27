@@ -1,0 +1,54 @@
+version: '3.8'
+
+services:
+  #
+  # PostgreSQL Database Service
+  #
+  postgres-db:
+    image: postgres:13
+    container_name: optifuel-postgres-db
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+  
+  #
+  # Machine Learning Service
+  #
+  ml-service:
+    container_name: optifuel-ml-service
+    build:
+      context: ./machine_learning
+      dockerfile: Dockerfile
+    ports:
+      - "${ML_SERVICE_PORT}:8000"
+    restart: unless-stopped
+
+  #
+  # Backend API Service
+  #
+  backend-api:
+    container_name: optifuel-backend-api
+    build:
+      context: ./backend/OptiFuel.API
+      dockerfile: Dockerfile
+    ports:
+      - "${BACKEND_API_PORT}:80"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development 
+      - ASPNETCORE_URLS=http://+:80
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - MlApiServiceSettings__BaseUrl=http://ml-service:8000
+      - JWT__Secret=${JWT_SECRET}
+    depends_on:
+      - postgres-db
+      - ml-service
+    restart: unless-stopped
+
+volumes:
+  postgres_data:

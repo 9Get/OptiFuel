@@ -1,0 +1,16 @@
+# --- FastAPI & Server ---
+fastapi
+uvicorn[standard]
+
+# --- Data Science & ML ---
+pandas
+scikit-learn
+joblib
+numpy
+
+# --- Visualization ---
+matplotlib
+seaborn
+
+# --- Pydantic v2 (FastAPI uses it) ---
+pydantic
