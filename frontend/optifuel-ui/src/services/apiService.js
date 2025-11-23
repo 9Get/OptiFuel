@@ -29,12 +29,22 @@ apiClient.interceptors.response.use(
   }
 );
 
-export const predictFuelConsumption = (formData) => {
+export const getPrediction = (formData) => {
   return apiClient.post("/predict", formData);
 };
 
-const api = {
-    predictFuelConsumption,
-};
+export const getHistory = () => {
+  return apiClient.get("/voyages");
+}
 
-export default api;
+export const updateActualConsumption = (historyId, actualConsumption) => {
+  return apiClient.put(`/voyages/${historyId}`, { actualConsumption });
+}
+
+// const apiService = {
+//     getPrediction,
+//     getHistory,
+//     updateActualConsumption,
+// };
+
+// export default apiService;

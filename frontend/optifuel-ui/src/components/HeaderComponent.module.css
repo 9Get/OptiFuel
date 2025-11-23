@@ -1,0 +1,38 @@
+.logoGroup {
+  text-decoration: none;
+}
+
+.logoTitle,
+.logoIcon {
+  color: var(--mantine-color-black);
+}
+
+[data-mantine-color-scheme="dark"] .logoTitle,
+[data-mantine-color-scheme="dark"] .logoIcon {
+  color: var(--mantine-color-white);
+}
+
+.navButton {
+  color: var(--mantine-color-gray-7);
+  border-radius: 1px;
+  border-color: var(--mantine-color-gray-5);
+}
+
+.navButton:hover {
+  background-color: var(--mantine-color-gray-0);
+  border-color: var(--mantine-color-gray-5);
+}
+
+[data-mantine-color-scheme="dark"] .navButton {
+  color: var(--mantine-color-gray-0);
+}
+
+[data-mantine-color-scheme="dark"] .navButton:hover {
+  background-color: var(--mantine-color-dark-6);
+}
+
+.logoIcon {
+  width: 35px;
+  height: 35px;
+  fill: white;
+}

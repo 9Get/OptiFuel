@@ -1,37 +1,29 @@
-import { AppShell, Title, Container } from "@mantine/core";
-import PredictionView from "./features/prediction/PredictionView";
+import { AppShell } from "@mantine/core";
+import { Outlet } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import classes from "./App.module.css";
+
+import HeaderComponent from "./components/HeaderComponent";
+import FooterComponent from "./components/FooterComponent";
 
 function App() {
+  const { isAuthenticated, logout } = useAuth();
+
   return (
     <AppShell
       padding="md"
       header={{ height: 60 }}
-      styles={(theme) => ({
-        header: {
-          backgroundColor: theme.colors.blue[6],
-          display: 'flex',
-          alignItems: 'center',
-          paddingLeft: theme.spacing.md,
-        },
-        main: {
-          backgroundColor:
-            theme.colorScheme === "white"
-              ? theme.colors.dark[8]
-              : theme.colors.gray[0],
-        },
-      })}
+      footer={{ height: 60 }}
     >
-      <AppShell.Header>
-        <Title order={2} style={{ color: "white" }}>
-          🚢 OptiFuel
-        </Title>
+      <AppShell.Header className={classes.header}>
+        <HeaderComponent isLoggedIn={isAuthenticated} />
       </AppShell.Header>
 
       <AppShell.Main>
-        <Container size="lg">
-          <PredictionView />
-        </Container>
+        <Outlet />
       </AppShell.Main>
+
+      <FooterComponent />
     </AppShell>
   );
 }

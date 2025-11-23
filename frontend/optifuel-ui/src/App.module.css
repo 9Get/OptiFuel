@@ -1,0 +1,8 @@
+.header {
+  background-color: #1976D2;
+  border-bottom: 0;
+}
+
+:global(.mantine-AppShell-footer) {
+  position: static !important;
+}
