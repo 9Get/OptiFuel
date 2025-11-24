@@ -4,16 +4,23 @@ import {
   Button,
   ActionIcon,
   useMantineColorScheme,
-  Space,
 } from "@mantine/core";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { IconSun, IconMoon } from "@tabler/icons-react";
 import classes from "./HeaderComponent.module.css";
 
 import ShipLogo from "../assets/ship-header-logo.svg?react";
+import { useAuth } from "../context/AuthContext";
 
-function HeaderComponent({ isLoggedIn }) {
+function HeaderComponent() {
   const { colorScheme, toggleColorScheme } = useMantineColorScheme();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   const authedLinks = (
     <>
@@ -74,7 +81,16 @@ function HeaderComponent({ isLoggedIn }) {
       </Group>
 
       <Group gap={5} visibleFrom="sm">
-        {isLoggedIn ? authedLinks : guestLinks}
+        {isAuthenticated ? (
+          <>
+            {authedLinks}
+            <Button variant="light" color="red" onClick={handleLogout}>
+              Logout
+            </Button>
+          </>
+        ) : (
+          guestLinks
+        )}
 
         <ActionIcon
           onClick={toggleColorScheme}

@@ -5,26 +5,47 @@ import { notifications } from "@mantine/notifications";
 
 import PredictionForm from "../components/PredictionForm";
 import PredictionResult from "../components/PredictionResult";
-import { getPrediction } from "../services/apiService";
+
+import { useAuth } from "../context/AuthContext";
+import { getPrediction, createVoyage } from "../services/apiService";
 
 function ForecastPage() {
   const [result, setResult] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const { isAuthenticated } = useAuth();
+
   const handleFormSubmit = async (formData) => {
     setIsLoading(true);
     setError(null);
     setResult(null);
 
+    let predictionResult;
     try {
-      const predictionResult = await getPrediction(formData);
-      setResult(predictionResult);
-      notifications.show({
-        title: "Prediction Successful",
-        message: "Fuel consumption prediction received successfully.",
-        color: "green",
-      });
+      if (isAuthenticated) {
+        predictionResult = await createVoyage(formData);
+        setResult(predictionResult);
+        notifications.show({
+          title: "Prediction Successful",
+          message: "Fuel consumption prediction received successfully.",
+          color: "green",
+        });
+      } else {
+        predictionResult = await getPrediction(formData);
+        
+        notifications.show({
+          title: 'Success',
+          message: 'Prediction received successfully!',
+          color: 'green',
+        });
+      }
+
+      const normalizedResult = {
+        predicted_fuel_consumption: predictionResult.predictedFuelConsumption || predictionResult.predicted_fuel_consumption
+      };
+
+      setResult(normalizedResult);
     } catch (apiError) {
       const errorMessage = apiError.message || "An unexpected error occurred.";
       setError(errorMessage);
@@ -59,9 +80,17 @@ function ForecastPage() {
 
       <Grid>
         <Grid.Col span={{ base: 12, md: 7 }}>
-          <div style={{ position: 'relative' }}>
-            <LoadingOverlay visible={isLoading} zIndex={1000} radius="sm" blur={2} />
-            <PredictionForm onPredict={handleFormSubmit} isLoading={isLoading} />
+          <div style={{ position: "relative" }}>
+            <LoadingOverlay
+              visible={isLoading}
+              zIndex={1000}
+              radius="sm"
+              blur={2}
+            />
+            <PredictionForm
+              onPredict={handleFormSubmit}
+              isLoading={isLoading}
+            />
           </div>
         </Grid.Col>
 
