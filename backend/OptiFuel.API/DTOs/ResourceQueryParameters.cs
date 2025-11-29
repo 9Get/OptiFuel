@@ -18,4 +18,8 @@ public class ResourceQueryParameters
 
     public string? SortBy { get; set; } = "CreatedAt";
     public string? SortOrder { get; set; } = "desc";
+
+    public string? DeviationCategory { get; set; }
+    public string? ShipType { get; set; }
+    public string? WeatherCondition { get; set; }
 }

@@ -5,10 +5,11 @@ import {
   NumberInput, Badge, Loader, Alert, RingProgress, Center, Stack, Divider, ThemeIcon
 } from '@mantine/core';
 import { notifications } from '@mantine/notifications';
-import { IconArrowLeft, IconAlertCircle, IconShip, IconMapPin, IconCalendar, IconCloud } from '@tabler/icons-react';
+import { IconArrowLeft, IconAlertCircle, IconShip, IconMapPin, IconCalendar, IconCloud, IconBrain  } from '@tabler/icons-react';
 
-import { getVoyageById, updateVoyageActual } from '../services/apiService';
+import { getVoyageById, updateVoyageActual, getVoyageExplanation  } from '../services/apiService';
 import { calculateDeviation, getDeviationColor } from '../features/prediction/prediction.utils';
+import ExplanationChart from '../components/ExplanationChart';
 
 function VoyageDetailsPage() {
   const { id } = useParams();
@@ -20,6 +21,9 @@ function VoyageDetailsPage() {
   const [error, setError] = useState(null);
 
   const [actualInput, setActualInput] = useState('');
+
+  const [explanation, setExplanation] = useState(null);
+  const [loadingExplanation, setLoadingExplanation] = useState(false);
 
   useEffect(() => {
     const fetchVoyage = async () => {
@@ -61,6 +65,22 @@ function VoyageDetailsPage() {
     }
   };
 
+  const handleExplain = async () => {
+    setLoadingExplanation(true);
+    try {
+      const data = await getVoyageExplanation(id);
+      setExplanation(data);
+    } catch (err) {
+      notifications.show({
+        title: 'Error',
+        message: 'Failed to generate explanation.',
+        color: 'red',
+      });
+    } finally {
+      setLoadingExplanation(false);
+    }
+  };
+
   if (loading) return <Center h={400}><Loader /></Center>;
   if (error) return (
     <Container mt="xl">
@@ -88,7 +108,6 @@ function VoyageDetailsPage() {
 
   return (
     <Container size="lg" py="xl">
-      {/* Шапка с кнопкой Назад */}
       <Group mb="lg">
         <Button variant="subtle" leftSection={<IconArrowLeft size={16} />} onClick={() => navigate('/history')} color="gray">
           Back
@@ -97,7 +116,6 @@ function VoyageDetailsPage() {
       </Group>
 
       <Grid>
-        {/* ЛЕВАЯ КОЛОНКА: Детали рейса */}
         <Grid.Col span={{ base: 12, md: 7 }}>
           <Paper withBorder p="md" radius="md" shadow="sm">
             <Title order={4} mb="md">Voyage Parameters</Title>
@@ -119,9 +137,29 @@ function VoyageDetailsPage() {
               </Group>
             </Stack>
           </Paper>
+
+          {explanation ? (
+             <ExplanationChart explanation={explanation} />
+          ) : (
+             <Paper withBorder p="md" radius="md" mt="md" bg="gray.0">
+                <Group justify="space-between">
+                    <div>
+                        <Text fw={500}>Why this prediction?</Text>
+                        <Text size="xs" c="dimmed">Use AI to analyze factors influencing this result.</Text>
+                    </div>
+                    <Button 
+                        variant="light" 
+                        leftSection={<IconBrain size={16}/>}
+                        onClick={handleExplain}
+                        loading={loadingExplanation}
+                    >
+                        Explain Prediction
+                    </Button>
+                </Group>
+             </Paper>
+          )}
         </Grid.Col>
 
-        {/* ПРАВАЯ КОЛОНКА: Мониторинг (План vs Факт) */}
         <Grid.Col span={{ base: 12, md: 5 }}>
           <Paper withBorder p="md" radius="md" shadow="sm" h="100%">
             <Title order={4} mb="md">Performance Monitoring</Title>
@@ -131,7 +169,7 @@ function VoyageDetailsPage() {
                     size={160}
                     thickness={16}
                     roundCaps
-                    // Если есть факт, показываем кольцо в цвете отклонения, иначе синее
+                    
                     sections={[{ value: 100, color: hasActual ? badgeColor : 'blue' }]}
                     label={
                         <Stack gap={0} align="center">
@@ -154,7 +192,6 @@ function VoyageDetailsPage() {
                 mb="md"
             />
 
-            {/* Блок результатов отклонения */}
             {hasActual && (
                 <Paper withBorder p="sm" bg="var(--mantine-color-body)" mb="md">
                     <Group justify="space-between">

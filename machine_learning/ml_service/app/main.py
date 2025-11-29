@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 from fastapi import FastAPI, HTTPException
 from contextlib import asynccontextmanager
+import shap
 
 # Імпортуємо моделі з локального модуля
 from .models import PredictionRequest, PredictionResponse
@@ -14,10 +15,12 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 
 # --- Словник для зберігання ML артефактів ---
 ml_artifacts = {}
+explainer = None
 
 # --- Lifespan Manager для завантаження ресурсів ---
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    global explainer
     # Код, що виконується на старті застосунку
     logging.info("Application startup: Loading ML artifacts...")
     
@@ -28,6 +31,12 @@ async def lifespan(app: FastAPI):
         ml_artifacts["scaler"] = joblib.load(artifacts_path / "scaler.joblib")
         ml_artifacts["feature_order"] = joblib.load(artifacts_path / "feature_order.joblib")
         logging.info("ML artifacts loaded successfully.")
+
+        try:
+            explainer = shap.TreeExplainer(ml_artifacts["model"])
+            logging.info("SHAP Explainer initialized successfully.")
+        except Exception as e:
+            logging.warning(f"Failed to initialize SHAP explainer: {e}")
     except FileNotFoundError as e:
         logging.error(f"Artifact loading error: {e}. Run the training pipeline first.")
     
@@ -97,3 +106,32 @@ def predict(request: PredictionRequest):
     except Exception as e:
         logging.error(f"Error during prediction: {e}", exc_info=True)
         raise HTTPException(status_code=400, detail=f"Failed to process request: {str(e)}")
+    
+
+@app.post("/explain")
+def explain(request: PredictionRequest):
+    if not explainer or not ml_artifacts["scaler"]:
+        raise HTTPException(status_code=503, detail="Explainer or Scaler not loaded")
+
+    try:
+        input_df = pd.DataFrame([request.dict()])
+        processed_df = preprocess_input(input_df, ml_artifacts["feature_order"]) 
+        scaled_features = ml_artifacts["scaler"].transform(processed_df)
+
+        shap_values = explainer.shap_values(scaled_features)
+
+        values = shap_values[0] if isinstance(shap_values, list) else shap_values
+
+        if len(values.shape) > 1:
+            values = values[0]
+
+        explanation = {}
+        for i, col_name in enumerate(ml_artifacts["feature_order"]):
+            explanation[col_name] = float(values[i])
+
+        return explanation
+
+    except Exception as e:
+        logging.error(f"Explanation error: {e}")
+        
+        raise HTTPException(status_code=400, detail=f"Explanation failed: {str(e)}")

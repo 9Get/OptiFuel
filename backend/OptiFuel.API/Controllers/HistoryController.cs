@@ -36,6 +36,42 @@ public class HistoryController : ControllerBase
                                 .Where(h => h.UserId == userId)
                                 .AsQueryable();
 
+        if (!string.IsNullOrEmpty(queryParameters.DeviationCategory))
+        {
+
+            switch (queryParameters.DeviationCategory)
+            {
+                case "Saving": // <= -3%
+                    query = query.Where(h => h.ActualFuelConsumption.HasValue &&
+                        ((h.ActualFuelConsumption.Value - h.PredictedFuelConsumption) / h.PredictedFuelConsumption * 100) <= -3);
+                    break;
+                case "Normal": // > -3% AND <= 3%
+                    query = query.Where(h => h.ActualFuelConsumption.HasValue &&
+                        ((h.ActualFuelConsumption.Value - h.PredictedFuelConsumption) / h.PredictedFuelConsumption * 100) > -3 &&
+                        ((h.ActualFuelConsumption.Value - h.PredictedFuelConsumption) / h.PredictedFuelConsumption * 100) <= 3);
+                    break;
+                case "Warning": // > 3% AND <= 7%
+                    query = query.Where(h => h.ActualFuelConsumption.HasValue &&
+                        ((h.ActualFuelConsumption.Value - h.PredictedFuelConsumption) / h.PredictedFuelConsumption * 100) > 3 &&
+                        ((h.ActualFuelConsumption.Value - h.PredictedFuelConsumption) / h.PredictedFuelConsumption * 100) <= 7);
+                    break;
+                case "Critical": // > 7%
+                    query = query.Where(h => h.ActualFuelConsumption.HasValue &&
+                        ((h.ActualFuelConsumption.Value - h.PredictedFuelConsumption) / h.PredictedFuelConsumption * 100) > 7);
+                    break;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(queryParameters.ShipType))
+        {
+            query = query.Where(h => h.ShipType == queryParameters.ShipType);
+        }
+
+        if (!string.IsNullOrEmpty(queryParameters.WeatherCondition))
+        {
+            query = query.Where(h => h.WeatherConditions == queryParameters.WeatherCondition);
+        }
+
         if (!string.IsNullOrWhiteSpace(queryParameters.SortBy))
         {
             var sortOrder = queryParameters.SortOrder?.ToLower() == "asc" ? "ascending" : "descending";

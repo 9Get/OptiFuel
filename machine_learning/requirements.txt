@@ -11,6 +11,7 @@ numpy
 # --- Visualization ---
 matplotlib
 seaborn
+shap
 
 # --- Pydantic v2 (FastAPI uses it) ---
 pydantic

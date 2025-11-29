@@ -126,6 +126,38 @@ public class VoyagesController : ControllerBase
         }
     }
 
+    [HttpPost("{id}/explain")]
+    public async Task<IActionResult> ExplainVoyage(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        var voyage = await _dbContext.Voyages
+            .FirstOrDefaultAsync(h => h.Id == id && h.UserId == userId);
+        
+        if (voyage == null) return NotFound();
+
+        var predictionRequest = new PredictionRequest
+        {
+            Distance = voyage.Distance,
+            EngineEfficiency = voyage.EngineEfficiency,
+            ShipType = voyage.ShipType,
+            RouteId = voyage.RouteId,
+            FuelType = voyage.FuelType,
+            WeatherConditions = voyage.WeatherConditions,
+            Month = voyage.Month
+        };
+
+        try
+        {
+            var explanation = await _mlApiService.GetExplanationAsync(predictionRequest);
+            return Ok(explanation);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { message = "Failed to generate explanation", error = ex.Message });
+        }
+    }
+
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(Voyage))]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]

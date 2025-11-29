@@ -21,7 +21,16 @@ public class MlApiService
         var response = await _httpClient.PostAsJsonAsync("/predict", request);
 
         response.EnsureSuccessStatusCode();
-        
+
         return await response.Content.ReadFromJsonAsync<PredictionResponse>();
+    }
+
+    public async Task<Dictionary<string, double>?> GetExplanationAsync(PredictionRequest request)
+    {
+        var response = await _httpClient.PostAsJsonAsync("/explain", request);
+
+        response.EnsureSuccessStatusCode();
+        
+        return await response.Content.ReadFromJsonAsync<Dictionary<string, double>>();
     }
 }

@@ -34,7 +34,7 @@ apiClient.interceptors.response.use(
       localStorage.removeItem("authToken");
 
       window.location.href = "/login";
-      
+
       return Promise.reject({
         message: "Session expired. Please log in again.",
       });
@@ -77,6 +77,18 @@ export const updateVoyageActual = (id, actualFuelConsumption) => {
   return apiClient.put(`/voyages/${id}`, { actualFuelConsumption });
 };
 
+export const getAnalyticsSummary = () => {
+  return apiClient.get("/analytics/summary");
+};
+
+export const getAnalyticsCharts = () => {
+  return apiClient.get("/analytics/charts");
+};
+
+export const getVoyageExplanation = (id) => {
+  return apiClient.post(`/voyages/${id}/explain`);
+};
+
 export const getHistory = (queryParams) => {
   const params = new URLSearchParams({
     pageNumber: queryParams.page,
@@ -84,6 +96,10 @@ export const getHistory = (queryParams) => {
     sortBy: queryParams.sortBy,
     sortOrder: queryParams.sortOrder,
   });
+
+  if (queryParams.deviationCategory) params.append('DeviationCategory', queryParams.deviationCategory);
+  if (queryParams.shipType) params.append('ShipType', queryParams.shipType);
+  if (queryParams.weatherCondition) params.append('WeatherCondition', queryParams.weatherCondition);
 
   return apiClient.get(`/history?${params.toString()}`);
 };

@@ -10,6 +10,9 @@ import {
   Pagination,
   UnstyledButton,
   Text,
+  Button,
+  Badge,
+  CloseButton 
 } from "@mantine/core";
 import {
   IconAlertCircle,
@@ -18,8 +21,15 @@ import {
   IconChevronDown,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
-import { getHistory } from "../services/apiService";
+import {
+  getHistory,
+  getAnalyticsSummary,
+  getAnalyticsCharts,
+} from "../services/apiService";
 import classes from "./HistoryPage.module.css";
+
+import AnalyticsStats from "../components/AnalyticsStats";
+import AnalyticsCharts from "../components/AnalyticsCharts";
 
 function Th({ children, reversed, sorted, onSort }) {
   const Icon = sorted
@@ -49,11 +59,42 @@ function HistoryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [analyticsData, setAnalyticsData] = useState(null);
+  const [chartsData, setChartsData] = useState(null);
+
   const [queryParams, setQueryParams] = useState({
     page: 1,
     sortBy: "CreatedAt",
     sortOrder: "desc",
+    deviationCategory: null,
+    shipType: null,
+    weatherCondition: null,
   });
+
+  const applyFilter = (key, value) => {
+    setQueryParams((prev) => ({
+      ...prev,
+      [key]: value,
+      page: 1,
+    }));
+  };
+
+  const handleDeviationClick = (label) =>
+    applyFilter("deviationCategory", label.split(" ")[0]);
+  const handleShipClick = (data) => applyFilter("shipType", data.shipType);
+  const handleWeatherClick = (data) =>
+    applyFilter("weatherCondition", data.weather);
+
+  const FilterBadge = ({ label, onRemove }) => (
+    <Badge
+      size="lg"
+      variant="light"
+      rightSection={<CloseButton size="xs" onClick={onRemove} />}
+      pr={3}
+    >
+      {label}
+    </Badge>
+  );
 
   useEffect(() => {
     const fetchHistory = async () => {
@@ -70,6 +111,24 @@ function HistoryPage() {
     };
     fetchHistory();
   }, [queryParams]);
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [stats, charts] = await Promise.all([
+          getAnalyticsSummary(),
+          getAnalyticsCharts(),
+        ]);
+
+        setAnalyticsData(stats);
+        setChartsData(charts);
+      } catch (err) {
+        console.error("Failed to load analytics:", err);
+      }
+    };
+
+    fetchStats();
+  }, []);
 
   const handleSort = (field) => {
     const isAsc =
@@ -137,14 +196,70 @@ function HistoryPage() {
         Forecast History
       </Title>
 
+      {analyticsData && <AnalyticsStats data={analyticsData} />}
+
+      {chartsData && (
+        <AnalyticsCharts
+          data={chartsData}
+          onDeviationClick={handleDeviationClick}
+          onShipClick={handleShipClick}
+          onWeatherClick={handleWeatherClick}
+        />
+      )}
+
+      <Group mb="md" style={{ minHeight: 30 }}>
+        {queryParams.deviationCategory && (
+          <FilterBadge
+            label={`Deviation: ${queryParams.deviationCategory}`}
+            onRemove={() => applyFilter("deviationCategory", null)}
+          />
+        )}
+        {queryParams.shipType && (
+          <FilterBadge
+            label={`Ship: ${queryParams.shipType}`}
+            onRemove={() => applyFilter("shipType", null)}
+          />
+        )}
+        {queryParams.weatherCondition && (
+          <FilterBadge
+            label={`Weather: ${queryParams.weatherCondition}`}
+            onRemove={() => applyFilter("weatherCondition", null)}
+          />
+        )}
+
+        {(queryParams.deviationCategory ||
+          queryParams.shipType ||
+          queryParams.weatherCondition) && (
+          <Button
+            variant="subtle"
+            color="gray"
+            size="xs"
+            onClick={() =>
+              setQueryParams({
+                page: 1,
+                sortBy: "CreatedAt",
+                sortOrder: "desc",
+                deviationCategory: null,
+                shipType: null,
+                weatherCondition: null,
+              })
+            }
+          >
+            Clear All
+          </Button>
+        )}
+      </Group>
+
+      <div style={{ marginBottom: "20px" }}></div>
+
       <Table.ScrollContainer minWidth={1000}>
         <Table striped highlightOnHover withTableBorder withColumnBorders>
           <Table.Thead>
             <Table.Tr>
               <Th
-                sorted={queryParams.sortBy === "CreatedAtUtc"}
+                sorted={queryParams.sortBy === "CreatedAt"}
                 reversed={queryParams.sortOrder === "desc"}
-                onSort={() => handleSort("CreatedAtUtc")}
+                onSort={() => handleSort("CreatedAt")}
               >
                 Date
               </Th>
